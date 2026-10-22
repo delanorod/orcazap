@@ -4,7 +4,7 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteSchema, type QuoteFormData } from "@/lib/quotes/schema";
 import { calculateQuote } from "@/lib/quotes/calculate";
-import { criarOrcamento } from "../lib/quotes/actions";
+import { criarOrcamento } from "../actions";
 import { useState, useTransition } from "react";
 
 export default function QuoteForm({ clients }: { clients: { id: string; name: string }[] }) {
@@ -52,6 +52,7 @@ export default function QuoteForm({ clients }: { clients: { id: string; name: st
       {errors.clientId && <p className="text-sm text-red-600">{errors.clientId.message}</p>}
 
       <input type="date" {...register("validUntil")} className="rounded border p-2" />
+         {errors.validUntil && <p className="text-sm text-red-600">{errors.validUntil.message}</p>}
 
       <h2 className="font-semibold">Itens</h2>
       {fields.map((field, index) => (

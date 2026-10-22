@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import QuoteForm from "../../../app/quote-form";
+import QuoteForm from "./quote-form";
 
 export default async function NewQuotePage() {
   const supabase = await createClient();

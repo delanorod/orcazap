@@ -13,3 +13,16 @@ const transitions: Record<QuoteStatus, QuoteStatus[]> = {
 export function canTransition(from: QuoteStatus, to: QuoteStatus) {
   return transitions[from].includes(to);
 }
+
+export function nextStatuses(from: QuoteStatus): QuoteStatus[] {
+  return transitions[from];
+}
+
+export const statusLabel: Record<QuoteStatus, string> = {
+  draft: "Rascunho",
+  sent: "Enviado",
+  viewed: "Visualizado",
+  accepted: "Aceito",
+  rejected: "Recusado",
+  expired: "Expirado",
+};
