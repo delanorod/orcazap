@@ -7,6 +7,7 @@ import {
   type QuoteStatus,
 } from "@/lib/quotes/status";
 import { brl } from "@/lib/format";
+import { BotaoEnviarEmail } from "./botao-enviar-email";
 
 type QuoteItem = {
   id: string;
@@ -26,7 +27,7 @@ export default async function OrcamentoPage({
 
   const { data: quote } = await supabase
     .from("quotes")
-    .select("*, quote_items(*), clients(name)")
+    .select("*, quote_items(*), clients(name, email)")
     .eq("id", id)
     .single();
 
@@ -34,7 +35,7 @@ export default async function OrcamentoPage({
 
   const status = quote.status as QuoteStatus;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const publicUrl = `${baseUrl}/q/${quote.public_token}`; // ← crases
+  const publicUrl = `${baseUrl}/q/${quote.public_token}`;
   const items = quote.quote_items as QuoteItem[];
   const statuses = nextStatuses(status);
 
@@ -59,7 +60,7 @@ export default async function OrcamentoPage({
 
       <p className="font-bold">Total: {brl(quote.total)}</p>
 
-      {/* Botões: PDF + status */}
+      {/* Botões: PDF + status + e-mail */}
       <div className="flex flex-wrap gap-2">
         <a
           href={`/orcamentos/${quote.id}/pdf`}
@@ -82,6 +83,11 @@ export default async function OrcamentoPage({
           </form>
         ))}
 
+        <BotaoEnviarEmail
+          quoteId={quote.id}
+          disabled={status === "draft" || !quote.clients?.email}
+        />
+
         {statuses.length === 0 && (
           <p className="text-sm text-gray-500">
             Status final, sem mais transições.
@@ -95,10 +101,17 @@ export default async function OrcamentoPage({
           Marque como enviado para liberar o link do cliente.
         </p>
       ) : (
-        <p className="text-sm">
-          Link para o cliente:{" "}
-          <code className="break-all">{publicUrl}</code>
-        </p>
+        <>
+          <p className="text-sm">
+            Link para o cliente:{" "}
+            <code className="break-all">{publicUrl}</code>
+          </p>
+          {!quote.clients?.email && (
+            <p className="text-sm text-gray-500">
+              Cadastre o e-mail do cliente para poder enviar por e-mail.
+            </p>
+          )}
+        </>
       )}
     </main>
   );
