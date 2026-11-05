@@ -1,6 +1,7 @@
 // lib/email/enviar.ts
 import { getResend, EMAIL_FROM } from "./client";
 import OrcamentoEnviado from "@/emails/orcamento-enviado";
+import OrcamentoEvento from "@/emails/orcamento-evento";
 
 export async function enviarEmailOrcamento(params: {
   para: string;
@@ -23,4 +24,16 @@ export async function enviarEmailOrcamento(params: {
     return { ok: false as const, error };
   }
   return { ok: true as const, id: data?.id };
+}
+
+export async function enviarEmailEvento(p: {
+  para: string; assunto: string; titulo: string; mensagem: string; url: string;
+}) {
+  const { error } = await getResend().emails.send({
+    from: EMAIL_FROM,
+    to: p.para,
+    subject: p.assunto,
+    react: OrcamentoEvento({ titulo: p.titulo, mensagem: p.mensagem, url: p.url }),
+  });
+  if (error) console.error("Resend:", error);
 }
