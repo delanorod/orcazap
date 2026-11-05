@@ -48,7 +48,7 @@
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.13.0",
     "jiti": "^2.7.0",
-    "puppeteer": "^19.8.0",
+    "puppeteer": "24.43.1",
     "react-email": "^6.11.6",
     "tailwindcss": "^4",
     "typescript": "^5",
