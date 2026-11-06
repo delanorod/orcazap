@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -36,12 +35,14 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/cadastro")&&
-    !request.nextUrl.pathname.startsWith("/q/")
-  ) {
+  const path = request.nextUrl.pathname;
+  const rotaPublica =
+    path.startsWith("/login") ||
+    path.startsWith("/cadastro") ||
+    path.startsWith("/q/") ||
+    path.startsWith("/api/cron/"); // protegida pelo CRON_SECRET dentro da rota
+
+  if (!user && !rotaPublica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
 
@@ -49,13 +50,4 @@ export async function updateSession(request: NextRequest) {
   }
 
   return supabaseResponse;
-}
-
-//ADMIN TS?
-export function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
 }
