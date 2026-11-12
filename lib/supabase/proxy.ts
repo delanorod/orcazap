@@ -40,7 +40,9 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/login") ||
     path.startsWith("/cadastro") ||
     path.startsWith("/q/") ||
-    path.startsWith("/api/cron/"); // protegida pelo CRON_SECRET dentro da rota
+    path.startsWith("/api/cron/");  // protegida pelo CRON_SECRET dentro da rota
+    
+
 
   if (!user && !rotaPublica) {
     const url = request.nextUrl.clone();
