@@ -11,9 +11,9 @@
     "email:dev": "email dev --dir emails"
   },
   "overrides": {
-    "puppeteer-core": {
-      "basic-ftp": "6.2.1"
-    }
+    "puppeteer": "22.15.0",
+    "puppeteer-core": "22.15.0",
+    "basic-ftp": "6.2.1"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
