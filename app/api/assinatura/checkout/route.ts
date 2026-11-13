@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { obterAssinatura } from '@/lib/acesso';
 import { montarReferencia } from '@/lib/assinatura';
 import { PLANOS } from '@/lib/planos';
-import { MpError, criarPreferencia } from '@/lib/mercadopago/client';
+import { MpError, criarPreapproval, criarPreferencia } from '@/lib/mercadopago/client';
+import { createAdminClient } from '@/lib/supabase/admin';
+
 
 // Zod valida o que chega do navegador. Nunca confie no corpo da requisição.
 const Corpo = z.object({
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
   const { plano: planoId, metodo } = parsed.data;
   const plano = PLANOS[planoId]; // o PREÇO vem do servidor, não do navegador
 
-  const { user } = await obterAssinatura();
+  const { user, assinatura } = await obterAssinatura();
   if (!user.email) return NextResponse.json({ erro: 'Sua conta não tem e-mail.' }, { status: 400 });
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '');
@@ -54,10 +56,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ url: pref.init_point });
     }
 
-    // O cartão entra no Dia 3
-    return NextResponse.json({ erro: 'Cartão ainda não disponível.' }, { status: 501 });
-  } catch (e) {
-    console.error('[checkout]', e instanceof MpError ? { status: e.status, corpo: e.corpo } : e);
-    return NextResponse.json({ erro: 'Não foi possível iniciar o pagamento. Tente novamente.' }, { status: 502 });
+       // ---------------------------------------------- Cartão (recorrente)
+    // Já tem assinatura no cartão funcionando? Evita duas cobranças ao mesmo tempo.
+    if (assinatura.mp_preapproval_id && assinatura.status === 'ativa' && assinatura.metodo === 'cartao') {
+      return NextResponse.json(
+        { erro: 'Você já tem uma assinatura no cartão. Cancele a atual antes de trocar de plano.' },
+        { status: 409 },
+      );
+    }
+
+    const pre = await criarPreapproval({
+      reason: `OrçaZap ${plano.nome}`,
+      external_reference: referencia,
+      payer_email: user.email,
+      back_url: retorno,
+      status: 'pending', // o cliente informa o cartão na tela do Mercado Pago
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: plano.precoMensal,
+        currency_id: 'BRL',
+      },
+    });
+
+    if (!pre.init_point) throw new Error('Mercado Pago não retornou init_point');
+
+    // Guarda o id ANTES de mandar o usuário embora: o webhook usa isso para casar a assinatura.
+    const { error } = await createAdminClient()
+      .from('assinaturas')
+      .update({ mp_preapproval_id: pre.id })
+      .eq('user_id', user.id);
+    if (error) throw new Error(error.message);
+
+    return NextResponse.json({ url: pre.init_point });
+  } catch (err) {
+    if (err instanceof MpError) {
+      console.error('[mp]', err.status, JSON.stringify(err.corpo));
+      return NextResponse.json({ erro: 'Erro no Mercado Pago. Tente novamente mais tarde.' }, { status: 500 });
+    } else {
+      console.error(err);
+      return NextResponse.json({ erro: 'Erro interno. Tente novamente mais tarde.' }, { status: 500 });
+    }
   }
 }

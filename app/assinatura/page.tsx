@@ -1,9 +1,10 @@
 import { obterAssinatura } from '@/lib/acesso';
 import { LISTA_PLANOS, formatarPreco } from '@/lib/planos';
 import PlanosClient from './PlanosClient';
+import CancelarButton from './CancelarButton';
 
 export default async function AssinaturaPage() {
-  await obterAssinatura(); // garante login
+ const { assinatura } = await obterAssinatura();
 
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-6">
@@ -14,6 +15,7 @@ export default async function AssinaturaPage() {
         }))}
         planoAtual={null}
       />
+      {assinatura.mp_preapproval_id && assinatura.status !== 'cancelada' && <CancelarButton />}
     </main>
   );
 }
